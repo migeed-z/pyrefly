@@ -280,7 +280,7 @@ fn on_class(
         let starts_with_underscore = name.starts_with('_');
         let ends_with_double_underscore = name.ends_with("__");
 
-        starts_with_underscore && !ends_with_double_underscore
+        !starts_with_underscore && !ends_with_double_underscore
     }
 
     for base_type in get_class_bases(class).iter() {
@@ -316,7 +316,7 @@ fn on_class(
             {
                 Variance::Covariant
             } else {
-                Variance::Invariant
+                Variance::Bivariant
             };
         on_type(variance, true, ty, on_edge, on_var);
 
