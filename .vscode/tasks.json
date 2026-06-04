@@ -1,0 +1,161 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "watch extension",
+      "dependsOn": [
+        "npm: watch:tsc",
+        "npm: watch:esbuild"
+      ],
+      "presentation": {
+        "reveal": "never"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "build extension",
+      "dependsOn": [
+        "npm: compile",
+        "cargo: build pyrefly for extension"
+      ],
+      "presentation": {
+        "reveal": "never"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "type": "npm",
+      "script": "watch:esbuild",
+      "group": "build",
+      "isBackground": true,
+      "label": "npm: watch:esbuild",
+      "presentation": {
+        "group": "watch",
+        "reveal": "never"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/lsp"
+      },
+      "dependsOn": [
+        "npm install"
+      ]
+    },
+    {
+      "type": "npm",
+      "script": "compile",
+      "group": "build",
+      "isBackground": true,
+      "label": "npm: compile",
+      "presentation": {
+        "reveal": "never"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/lsp"
+      },
+      "dependsOn": [
+        "npm install"
+      ]
+    },
+    {
+      "label": "npm install",
+      "type": "npm",
+      "script": "install",
+      "presentation": {
+        "reveal": "never"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/lsp"
+      },
+      "group": "build"
+    },
+    {
+      "type": "shell",
+      "command": "cargo",
+      "group": "build",
+      "isBackground": true,
+      "label": "cargo: build pyrefly for extension",
+      "args": [
+        "build",
+        "--release",
+        "--artifact-dir",
+        "../lsp/bin",
+        "-Z",
+        "unstable-options"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/pyrefly",
+        "shell": {
+          // -l (login shell) necessary on some machines to find cargo
+          // https://code.visualstudio.com/docs/editor/tasks#_why-do-i-get-command-not-found-when-running-a-task
+          "args": [
+            "-l",
+            "-c"
+          ],
+        },
+      },
+      "windows": {
+        "options": {
+          "shell": {
+            // Leaving "args" blank does not override default option - a value is necessary
+            // https://code.visualstudio.com/docs/debugtest/tasks#_custom-tasks
+            "args": [
+              "-NonInteractive"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "shell",
+      "command": "cargo watch -x 'build --all-features --artifact-dir ../lsp/bin -Z unstable-options'",
+      "group": "build",
+      "isBackground": true,
+      "label": "cargo: watch debug pyrefly for extension",
+      "options": {
+        "shell": {
+          "args": ["-c", "-l"]
+        },
+        "cwd": "${workspaceFolder}/pyrefly"
+      },
+      "windows": {
+        "options": {
+          "shell": {
+            "args": ["-NonInteractive"]
+          }
+        }
+      },
+      "problemMatcher": {
+        "base": "$rustc",
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^\\[Running\\]",
+          "endsPattern": "^\\[Finished running\\]"
+        }
+      }
+    },
+    {
+      "type": "npm",
+      "script": "watch:tsc",
+      "group": "build",
+      "problemMatcher": "$tsc-watch",
+      "isBackground": true,
+      "label": "npm: watch:tsc",
+      "presentation": {
+        "group": "watch",
+        "reveal": "never"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/lsp"
+      },
+      "dependsOn": [
+        "npm install"
+      ]
+    }
+  ]
+}

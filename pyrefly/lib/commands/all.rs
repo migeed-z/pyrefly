@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+use std::sync::Arc;
+
+use clap::Subcommand;
+use pyrefly_util::telemetry::Telemetry;
+
+use crate::commands::buck_check::BuckCheckArgs;
+use crate::commands::check::FullCheckArgs;
+use crate::commands::check::SnippetCheckArgs;
+use crate::commands::config_finder::ConfigConfigurerWrapper;
+use crate::commands::dump_config::DumpConfigArgs;
+use crate::commands::infer::InferArgs;
+use crate::commands::init::InitArgs;
+use crate::commands::lsp::LspArgs;
+use crate::commands::report::ReportArgs;
+use crate::commands::suppress::SuppressArgs;
+use crate::commands::tsp::TspArgs;
+use crate::commands::util::CommandExitStatus;
+use crate::lsp::non_wasm::external_references::NoExternalReferences;
+
+/// Subcommands to run Pyrefly with.
+#[deny(clippy::missing_docs_in_private_items)]
+#[derive(Debug, Clone, Subcommand)]
+pub enum Command {
+    /// Full type checking on a file or a project
+    Check(FullCheckArgs),
+
+    /// Check a Python code snippet
+    Snippet(SnippetCheckArgs),
+
+    /// Dump info about pyrefly's configuration. Use by replacing `check` with `dump-config` in your pyrefly invocation.
+    DumpConfig(DumpConfigArgs),
+
+    /// Entry point for Buck integration
+    BuckCheck(BuckCheckArgs),
+
+    /// Initialize a new pyrefly config in the given directory,
+    /// or migrate an existing mypy or pyright config to pyrefly.
+    Init(InitArgs),
+
+    /// Start an LSP server
+    Lsp(LspArgs),
+
+    /// Start a TSP server
+    Tsp(TspArgs),
+    /// Automatically add type annotations to a file or directory.
+    Infer(InferArgs),
+    /// Generate reports from pyrefly type checking results.
+    Report(ReportArgs),
+    /// Suppress type errors by adding ignore comments, or remove unused ignores.
+    Suppress(SuppressArgs),
+}
+
+impl Command {
+    pub async fn run(
+        self,
+        version: &str,
+        telemetry: &impl Telemetry,
+        config_configurer_wrapper: Option<ConfigConfigurerWrapper>,
+    ) -> anyhow::Result<CommandExitStatus> {
+        match self {
+            Command::Check(args) => args.run(config_configurer_wrapper).await,
+            Command::Snippet(args) => args.run(config_configurer_wrapper).await,
+            Command::BuckCheck(args) => args.run(),
+            Command::Lsp(args) => args.run(
+                version,
+                None,
+                telemetry,
+                Arc::new(NoExternalReferences),
+                config_configurer_wrapper,
+            ),
+            Command::Tsp(args) => args.run(telemetry, config_configurer_wrapper),
+            Command::Init(args) => args.run(config_configurer_wrapper.clone()),
+            Command::Infer(args) => args.run(config_configurer_wrapper),
+            Command::DumpConfig(args) => args.run(config_configurer_wrapper),
+            Command::Report(args) => args.run(config_configurer_wrapper),
+            Command::Suppress(args) => args.run(config_configurer_wrapper),
+        }
+    }
+}
